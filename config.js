@@ -28,6 +28,7 @@ global.premium = ['916238768108'];
 global.packname = '𝚜𝚝𝚒𝚌𝚔𝚎𝚛 𝚋𝚢';
 global.author = '★✪ E̾R̾I̾C̾-̾B̾O̾T̾ ✪★';
 global.sessionName = 'session';
+global.scan = "https://suhail-md-g1y0.onrender.com/";
 global.prefa = ['', '!', '.'];
 global.sp = '✪';
 global.mess = {
