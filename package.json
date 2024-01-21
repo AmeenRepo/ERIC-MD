@@ -2,11 +2,12 @@
   "name": "𝐄𝐑𝐈𝐂-𝐌𝐃",
   "version": "1.0.0",
   "description": "WhatsApp Using Lib Baileys Multi Device",
-  "main": "index.js",
-  "type": "commonjs",
-  "scripts": {
-    "start": "node index.js"
-  },
+  "main": "lib/client.js",
+   "type": "commonjs",
+   "scripts": {
+             "start": "pm2 start lib/client.js --deep-monitoring --attach --name Ameen",
+             "stop": "pm2 stop Ameen"
+   },
   "keywords": [
     "termux",
     "whatsapp",
