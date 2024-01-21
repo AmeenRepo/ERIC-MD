@@ -43,7 +43,7 @@ global.mess = {
 };
 global.link = 'https://chat.whatsapp.com/GiKpLywBedf6V2eLr3ZAa8'
 global.linkGroup = 'https://chat.whatsapp.com/GiKpLywBedf6V2eLr3ZAa8'
-
+sessionName:process.env.SESSION_ID|| "",
 global.typemenu = 'v1' // 'v1' => 'v5'
 global.onlygroup = false // onlygroup
 global.onlypc = false
