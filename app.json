@@ -10,6 +10,11 @@
       "required": false,
       "value": ""
     },
+    "SESSION_ID": {
+      "description": "Please put your SESSION_ID here",
+      "value": ""
+  
+    },
     "ALWAYS_ONLINE": {
   "description": "Enable always online feature",
   "required": false,
