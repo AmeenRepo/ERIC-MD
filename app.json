@@ -3,6 +3,7 @@
   "description": "Whatsapp bot.by Ameen-Ser",
   "keywords": ["whatsapp bot","AMEEN_SER"],
   "repository": "https://github.com/AmeenRepo/ERIC-MD",
+  "logo": "https://telegra.ph/file/cc2bcbf4d22e95a6c8653.jpg",
   "stack": "container",
   "env": {
     "AUTO_READ": {
