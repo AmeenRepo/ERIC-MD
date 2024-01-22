@@ -27,8 +27,7 @@ global.owner = ['916238768108'];
 global.premium = ['916238768108'];
 global.packname = '𝚜𝚝𝚒𝚌𝚔𝚎𝚛 𝚋𝚢';
 global.author = '★✪ E̾R̾I̾C̾-̾B̾O̾T̾ ✪★';
-global.sessionName = (/ERIC-MD;;;/g, "");
-global.scan = "https://qr-ameen-a3b82b9f1794.herokuapp.com/";
+global.sessionName = 'session';
 global.prefa = ['', '!', '.'];
 global.sp = '✪';
 global.mess = {
@@ -52,9 +51,7 @@ global.limitawal = {
     premium: 'Infinity',
     free: 10
 };
-module.exports = {
-    sessionName:process.env.SESSION_ID|| ""
-};
+
 // Add anticall option
 global.config = {
     options: {
