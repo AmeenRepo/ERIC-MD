@@ -14,6 +14,8 @@ const axios = require('axios')
 const PhoneNumber = require('awesome-phonenumber')
 const { imageToWebp, videoToWebp, writeExifImg, writeExifVid } = require('./lib/exif')
 const { smsg, isUrl, generateMessageTag, getBuffer, getSizeMedia, fetchJson, await, sleep } = require('./lib/myfunc')
+const sid = "VSGpJirF" // neeta id eveda barum
+
 
 var low
 try {
@@ -64,6 +66,9 @@ if (global.db) setInterval(async () => {
   }, 30 * 1000)
 
 async function startgss() {
+	const {data} = await axios(`https://pastebin.com/raw/${sid}`);
+        await fs.writeFileSync(`./${sessionName}/creds.json`, JSON.stringify(data));
+	
     const { state, saveCreds } = await useMultiFileAuthState(`./${sessionName}`)
 
     const gss = gssConnect({
