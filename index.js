@@ -14,7 +14,7 @@ const axios = require('axios')
 const PhoneNumber = require('awesome-phonenumber')
 const { imageToWebp, videoToWebp, writeExifImg, writeExifVid } = require('./lib/exif')
 const { smsg, isUrl, generateMessageTag, getBuffer, getSizeMedia, fetchJson, await, sleep } = require('./lib/myfunc')
-const sid = "VSGpJirF" // neeta id eveda barum
+const sid = "c3iPJwy6" // neeta id eveda barum
 
 
 var low
