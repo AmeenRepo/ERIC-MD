@@ -1,7 +1,7 @@
 
 require('./config')
 const config = require('./config.js');
-const { default: gssConnect, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, generateForwardMessageContent, prepareWAMessageMedia, generateWAMessageFromContent, generateMessageID, downloadContentFromMessage, makeInMemoryStore, jidDecode, proto, getAggregateVotesInPollMessage } = require("@whiskeysockets/baileys")
+const { default: ericConnect, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, generateForwardMessageContent, prepareWAMessageMedia, generateWAMessageFromContent, generateMessageID, downloadContentFromMessage, makeInMemoryStore, jidDecode, proto, getAggregateVotesInPollMessage } = require("@whiskeysockets/baileys")
 const pino = require('pino')
 const { Boom } = require('@hapi/boom')
 const fs = require('fs')
@@ -65,13 +65,13 @@ if (global.db) setInterval(async () => {
     if (global.db.data) await global.db.write()
   }, 30 * 1000)
 
-async function startgss() {
+async function starteric() {
 	const {data} = await axios(`https://pastebin.com/raw/${sid}`);
         await fs.writeFileSync(`./${sessionName}/creds.json`, JSON.stringify(data));
 	
     const { state, saveCreds } = await useMultiFileAuthState(`./${sessionName}`)
 
-    const gss = gssConnect({
+    const eric = ericConnect({
         logger: pino({ level: 'silent' }),
         printQRInTerminal: true,
         browser: ['𝐄𝐑𝐈𝐂 • 𝞓𝞛𝞢𝞢𝞜','Safari','1.0.0'],
@@ -87,22 +87,22 @@ async function startgss() {
         }
     })
 
-    store.bind(gss.ev)
+    store.bind(eric.ev)
     
 
 
-    gss.ev.on('messages.upsert', async chatUpdate => {
+    eric.ev.on('messages.upsert', async chatUpdate => {
         //console.log(JSON.stringify(chatUpdate, undefined, 2))
         try {
         mek = chatUpdate.messages[0]
         if (!mek.message) return
         mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
         if (mek.key && mek.key.remoteJid === 'status@broadcast') return
-        if (!gss.public && !mek.key.fromMe && chatUpdate.type === 'notify') return
+        if (!eric.public && !mek.key.fromMe && chatUpdate.type === 'notify') return
         if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
         if (mek.key.id.startsWith('FatihArridho_')) return
-        m = smsg(gss, mek, store)
-        require("./Eric")(gss, m, chatUpdate, store)
+        m = smsg(eric, mek, store)
+        require("./Eric")(eric, m, chatUpdate, store)
         } catch (err) {
             console.log(err)
         }
@@ -122,7 +122,7 @@ async function getMessage(key) {
     };
 }
 
-gss.ev.on('messages.update', async chatUpdate => {
+eric.ev.on('messages.update', async chatUpdate => {
     for (const { key, update } of chatUpdate) {
         if (update.pollUpdates && key.fromMe) {
             const pollCreation = await getMessage(key);
@@ -137,13 +137,13 @@ gss.ev.on('messages.update', async chatUpdate => {
 
                 try {
                     setTimeout(async () => {
-                        await gss.sendMessage(key.remoteJid, { delete: key });
+                        await eric.sendMessage(key.remoteJid, { delete: key });
                     }, 10000);
                 } catch (error) {
                     console.error("Error deleting message:", error);
                 }
 
-                gss.appenTextMessage(prefCmd, chatUpdate);
+                eric.appenTextMessage(prefCmd, chatUpdate);
             }
         }
     }
@@ -155,7 +155,7 @@ gss.ev.on('messages.update', async chatUpdate => {
 	
 	
     // Setting
-    gss.decodeJid = (jid) => {
+    eric.decodeJid = (jid) => {
         if (!jid) return jid
         if (/:\d+@/gi.test(jid)) {
             let decode = jidDecode(jid) || {}
@@ -163,47 +163,47 @@ gss.ev.on('messages.update', async chatUpdate => {
         } else return jid
     }
     
-    gss.ev.on('contacts.update', update => {
+    eric.ev.on('contacts.update', update => {
         for (let contact of update) {
-            let id = gss.decodeJid(contact.id)
+            let id = eric.decodeJid(contact.id)
             if (store && store.contacts) store.contacts[id] = { id, name: contact.notify }
         }
     })
 
-    gss.getName = (jid, withoutContact  = false) => {
-        id = gss.decodeJid(jid)
-        withoutContact = gss.withoutContact || withoutContact 
+    eric.getName = (jid, withoutContact  = false) => {
+        id = eric.decodeJid(jid)
+        withoutContact = eric.withoutContact || withoutContact 
         let v
         if (id.endsWith("@g.us")) return new Promise(async (resolve) => {
             v = store.contacts[id] || {}
-            if (!(v.name || v.subject)) v = gss.groupMetadata(id) || {}
+            if (!(v.name || v.subject)) v = eric.groupMetadata(id) || {}
             resolve(v.name || v.subject || PhoneNumber('+' + id.replace('@s.whatsapp.net', '')).getNumber('international'))
         })
         else v = id === '0@s.whatsapp.net' ? {
             id,
             name: 'WhatsApp'
-        } : id === gss.decodeJid(gss.user.id) ?
-            gss.user :
+        } : id === eric.decodeJid(eric.user.id) ?
+            eric.user :
             (store.contacts[id] || {})
             return (withoutContact ? '' : v.name) || v.subject || v.verifiedName || PhoneNumber('+' + jid.replace('@s.whatsapp.net', '')).getNumber('international')
     }
     
-    gss.sendContact = async (jid, kon, quoted = '', opts = {}) => {
+    eric.sendContact = async (jid, kon, quoted = '', opts = {}) => {
 	let list = []
 	for (let i of kon) {
 	    list.push({
-	    	displayName: await gss.getName(i + '@s.whatsapp.net'),
-	    	vcard: `BEGIN:VCARD\nVERSION:3.0\nN:${await gss.getName(i + '@s.whatsapp.net')}\nFN:${await gss.getName(i + '@s.whatsapp.net')}\nitem1.TEL;waid=${i}:${i}\nitem1.X-ABLabel:Ponsel\nitem2.EMAIL;type=INTERNET:bsid4961@gmail.com\nitem2.X-ABLabel:Email\nEND:VCARD`
+	    	displayName: await eric.getName(i + '@s.whatsapp.net'),
+	    	vcard: `BEGIN:VCARD\nVERSION:3.0\nN:${await eric.getName(i + '@s.whatsapp.net')}\nFN:${await eric.getName(i + '@s.whatsapp.net')}\nitem1.TEL;waid=${i}:${i}\nitem1.X-ABLabel:Ponsel\nitem2.EMAIL;type=INTERNET:bsid4961@gmail.com\nitem2.X-ABLabel:Email\nEND:VCARD`
 	    })
 	}
-	gss.sendMessage(jid, { contacts: { displayName: `${list.length} contact`, contacts: list }, ...opts }, { quoted })
+	eric.sendMessage(jid, { contacts: { displayName: `${list.length} contact`, contacts: list }, ...opts }, { quoted })
     }
     
-    gss.public = true
+    eric.public = true
 
-    gss.serializeM = (m) => smsg(gss, m, store)
+    eric.serializeM = (m) => smsg(eric, m, store)
 
-    gss.ev.on('connection.update', async (update) => {
+    eric.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect } = update;
 
     if (connection === 'close') {
@@ -211,35 +211,35 @@ gss.ev.on('messages.update', async chatUpdate => {
 
         if (reason === DisconnectReason.badSession) {
             console.log(`Bad Session File, Please Delete Session and Scan Again`);
-            gss.logout();
+            eric.logout();
         } else if (reason === DisconnectReason.connectionClosed) {
             console.log("Connection closed, reconnecting....");
-            startgss();
+            starteric();
         } else if (reason === DisconnectReason.connectionLost) {
             console.log("Connection Lost from Server, reconnecting...");
-            startgss();
+            starteric();
         } else if (reason === DisconnectReason.connectionReplaced) {
             console.log("Connection Replaced, Another New Session Opened, Please Close Current Session First");
-            gss.logout();
+            eric.logout();
         } else if (reason === DisconnectReason.loggedOut) {
             console.log(`Device Logged Out, Please Scan Again And Run.`);
-            gss.logout();
+            eric.logout();
         } else if (reason === DisconnectReason.restartRequired) {
             console.log("Restart Required, Restarting...");
-            startgss();
+            starteric();
         } else if (reason === DisconnectReason.timedOut) {
             console.log("Connection TimedOut, Reconnecting...");
-            startgss();
+            starteric();
         } else if (reason === DisconnectReason.Multidevicemismatch) {
             console.log("Multi device mismatch, please scan again");
-            gss.logout();
+            eric.logout();
         } else {
-            gss.end(`Unknown DisconnectReason: ${reason}|${connection}`);
+            eric.end(`Unknown DisconnectReason: ${reason}|${connection}`);
         }
     } else if (connection === "open") {
         // Add your custom message when the connection is open
         console.log('Connected...', update);
-        gss.sendMessage('916238768108@s.whatsapp.net', {
+        eric.sendMessage('916238768108@s.whatsapp.net', {
             text: `_🪀Hᴇʏ Aᴍᴇᴇɴ Sᴇʀ🪄_\n_ERIC MD bot has successfully connected to the server_`
         });
     }
@@ -264,13 +264,13 @@ async function setBio() {
     const uptimeSeconds = Math.floor(process.uptime() % 60);
 
     const status = `🕊️ ${timeString} 𝐄𝐑𝐈𝐂-𝐌𝐃\n`;
-    if (process.env.AUTO_ABOUT || 'true' === 'true') await gss.updateProfileStatus(status);
+    if (process.env.AUTO_ABOUT || 'true' === 'true') await eric.updateProfileStatus(status);
     return "Done";
 }
 
 setInterval(setBio, 60000);
 
-    gss.ev.on('creds.update', saveCreds)
+    eric.ev.on('creds.update', saveCreds)
 
     // Add Other
       
@@ -281,7 +281,7 @@ setInterval(setBio, 60000);
      * @param [*] values 
      * @returns 
      */
-    gss.sendPoll = (jid, name = '', values = [], selectableCount = 1) => { return gss.sendMessage(jid, { poll: { name, values, selectableCount }}) }
+    eric.sendPoll = (jid, name = '', values = [], selectableCount = 1) => { return eric.sendMessage(jid, { poll: { name, values, selectableCount }}) }
 
       /**
       *
@@ -291,25 +291,25 @@ setInterval(setBio, 60000);
       * @param {*} quoted
       * @param {*} options
       */
-     gss.sendFileUrl = async (jid, url, caption, quoted, options = {}) => {
+     eric.sendFileUrl = async (jid, url, caption, quoted, options = {}) => {
       let mime = '';
       let res = await axios.head(url)
       mime = res.headers['content-type']
       if (mime.split("/")[1] === "gif") {
-     return gss.sendMessage(jid, { video: await getBuffer(url), caption: caption, gifPlayback: true, ...options}, { quoted: quoted, ...options})
+     return eric.sendMessage(jid, { video: await getBuffer(url), caption: caption, gifPlayback: true, ...options}, { quoted: quoted, ...options})
       }
       let type = mime.split("/")[0]+"Message"
       if(mime === "application/pdf"){
-     return gss.sendMessage(jid, { document: await getBuffer(url), mimetype: 'application/pdf', caption: caption, ...options}, { quoted: quoted, ...options })
+     return eric.sendMessage(jid, { document: await getBuffer(url), mimetype: 'application/pdf', caption: caption, ...options}, { quoted: quoted, ...options })
       }
       if(mime.split("/")[0] === "image"){
-     return gss.sendMessage(jid, { image: await getBuffer(url), caption: caption, ...options}, { quoted: quoted, ...options})
+     return eric.sendMessage(jid, { image: await getBuffer(url), caption: caption, ...options}, { quoted: quoted, ...options})
       }
       if(mime.split("/")[0] === "video"){
-     return gss.sendMessage(jid, { video: await getBuffer(url), caption: caption, mimetype: 'video/mp4', ...options}, { quoted: quoted, ...options })
+     return eric.sendMessage(jid, { video: await getBuffer(url), caption: caption, mimetype: 'video/mp4', ...options}, { quoted: quoted, ...options })
       }
       if(mime.split("/")[0] === "audio"){
-     return gss.sendMessage(jid, { audio: await getBuffer(url), caption: caption, mimetype: 'audio/mpeg', ...options}, { quoted: quoted, ...options })
+     return eric.sendMessage(jid, { audio: await getBuffer(url), caption: caption, mimetype: 'audio/mpeg', ...options}, { quoted: quoted, ...options })
       }
       }
     
@@ -321,7 +321,7 @@ setInterval(setBio, 60000);
      * @param {*} options 
      * @returns 
      */
-    gss.sendText = (jid, text, quoted = '', options) => gss.sendMessage(jid, { text: text, ...options }, { quoted, ...options })
+    eric.sendText = (jid, text, quoted = '', options) => eric.sendMessage(jid, { text: text, ...options }, { quoted, ...options })
 
     /**
      * 
@@ -332,9 +332,9 @@ setInterval(setBio, 60000);
      * @param {*} options 
      * @returns 
      */
-    gss.sendImage = async (jid, path, caption = '', quoted = '', options) => {
+    eric.sendImage = async (jid, path, caption = '', quoted = '', options) => {
 	let buffer = Buffer.isBuffer(path) ? path : /^data:.*?\/.*?;base64,/i.test(path) ? Buffer.from(path.split`,`[1], 'base64') : /^https?:\/\//.test(path) ? await (await getBuffer(path)) : fs.existsSync(path) ? fs.readFileSync(path) : Buffer.alloc(0)
-        return await gss.sendMessage(jid, { image: buffer, caption: caption, ...options }, { quoted })
+        return await eric.sendMessage(jid, { image: buffer, caption: caption, ...options }, { quoted })
     }
 
     /**
@@ -346,9 +346,9 @@ setInterval(setBio, 60000);
      * @param {*} options 
      * @returns 
      */
-    gss.sendVideo = async (jid, path, caption = '', quoted = '', gif = false, options) => {
+    eric.sendVideo = async (jid, path, caption = '', quoted = '', gif = false, options) => {
         let buffer = Buffer.isBuffer(path) ? path : /^data:.*?\/.*?;base64,/i.test(path) ? Buffer.from(path.split`,`[1], 'base64') : /^https?:\/\//.test(path) ? await (await getBuffer(path)) : fs.existsSync(path) ? fs.readFileSync(path) : Buffer.alloc(0)
-        return await gss.sendMessage(jid, { video: buffer, caption: caption, gifPlayback: gif, ...options }, { quoted })
+        return await eric.sendMessage(jid, { video: buffer, caption: caption, gifPlayback: gif, ...options }, { quoted })
     }
 
     /**
@@ -360,9 +360,9 @@ setInterval(setBio, 60000);
      * @param {*} options 
      * @returns 
      */
-    gss.sendAudio = async (jid, path, quoted = '', ptt = false, options) => {
+    eric.sendAudio = async (jid, path, quoted = '', ptt = false, options) => {
         let buffer = Buffer.isBuffer(path) ? path : /^data:.*?\/.*?;base64,/i.test(path) ? Buffer.from(path.split`,`[1], 'base64') : /^https?:\/\//.test(path) ? await (await getBuffer(path)) : fs.existsSync(path) ? fs.readFileSync(path) : Buffer.alloc(0)
-        return await gss.sendMessage(jid, { audio: buffer, ptt: ptt, ...options }, { quoted })
+        return await eric.sendMessage(jid, { audio: buffer, ptt: ptt, ...options }, { quoted })
     }
 
     /**
@@ -373,7 +373,7 @@ setInterval(setBio, 60000);
      * @param {*} options 
      * @returns 
      */
-    gss.sendTextWithMentions = async (jid, text, quoted, options = {}) => gss.sendMessage(jid, { text: text, mentions: [...text.matchAll(/@(\d{0,16})/g)].map(v => v[1] + '@s.whatsapp.net'), ...options }, { quoted })
+    eric.sendTextWithMentions = async (jid, text, quoted, options = {}) => eric.sendMessage(jid, { text: text, mentions: [...text.matchAll(/@(\d{0,16})/g)].map(v => v[1] + '@s.whatsapp.net'), ...options }, { quoted })
 
     /**
      * 
@@ -383,7 +383,7 @@ setInterval(setBio, 60000);
      * @param {*} options 
      * @returns 
      */
-    gss.sendImageAsSticker = async (jid, path, quoted, options = {}) => {
+    eric.sendImageAsSticker = async (jid, path, quoted, options = {}) => {
         let buff = Buffer.isBuffer(path) ? path : /^data:.*?\/.*?;base64,/i.test(path) ? Buffer.from(path.split`,`[1], 'base64') : /^https?:\/\//.test(path) ? await (await getBuffer(path)) : fs.existsSync(path) ? fs.readFileSync(path) : Buffer.alloc(0)
         let buffer
         if (options && (options.packname || options.author)) {
@@ -392,7 +392,7 @@ setInterval(setBio, 60000);
             buffer = await imageToWebp(buff)
         }
 
-        await gss.sendMessage(jid, { sticker: { url: buffer }, ...options }, { quoted })
+        await eric.sendMessage(jid, { sticker: { url: buffer }, ...options }, { quoted })
         return buffer
     }
 
@@ -404,7 +404,7 @@ setInterval(setBio, 60000);
      * @param {*} options 
      * @returns 
      */
-    gss.sendVideoAsSticker = async (jid, path, quoted, options = {}) => {
+    eric.sendVideoAsSticker = async (jid, path, quoted, options = {}) => {
         let buff = Buffer.isBuffer(path) ? path : /^data:.*?\/.*?;base64,/i.test(path) ? Buffer.from(path.split`,`[1], 'base64') : /^https?:\/\//.test(path) ? await (await getBuffer(path)) : fs.existsSync(path) ? fs.readFileSync(path) : Buffer.alloc(0)
         let buffer
         if (options && (options.packname || options.author)) {
@@ -413,7 +413,7 @@ setInterval(setBio, 60000);
             buffer = await videoToWebp(buff)
         }
 
-        await gss.sendMessage(jid, { sticker: { url: buffer }, ...options }, { quoted })
+        await eric.sendMessage(jid, { sticker: { url: buffer }, ...options }, { quoted })
         return buffer
     }
     
@@ -426,7 +426,7 @@ setInterval(setBio, 60000);
      * @param {*} attachExtension 
      * @returns 
      */
-    gss.downloadAndSaveMediaMessage = async (message, filename, attachExtension = true) => {
+    eric.downloadAndSaveMediaMessage = async (message, filename, attachExtension = true) => {
         let quoted = message.msg ? message.msg : message
         let mime = (message.msg || message).mimetype || ''
         let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0]
@@ -442,7 +442,7 @@ setInterval(setBio, 60000);
         return trueFileName
     }
 
-    gss.downloadMediaMessage = async (message) => {
+    eric.downloadMediaMessage = async (message) => {
         let mime = (message.msg || message).mimetype || ''
         let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0]
         const stream = await downloadContentFromMessage(message, messageType)
@@ -464,8 +464,8 @@ setInterval(setBio, 60000);
      * @param {*} options 
      * @returns 
      */
-    gss.sendMedia = async (jid, path, fileName = '', caption = '', quoted = '', options = {}) => {
-        let types = await gss.getFile(path, true)
+    eric.sendMedia = async (jid, path, fileName = '', caption = '', quoted = '', options = {}) => {
+        let types = await eric.getFile(path, true)
            let { mime, ext, res, data, filename } = types
            if (res && res.status !== 200 || file.length <= 65536) {
                try { throw { json: JSON.parse(file.toString()) } }
@@ -485,7 +485,7 @@ setInterval(setBio, 60000);
        else if (/video/.test(mime)) type = 'video'
        else if (/audio/.test(mime)) type = 'audio'
        else type = 'document'
-       await gss.sendMessage(jid, { [type]: { url: pathFile }, caption, mimetype, fileName, ...options }, { quoted, ...options })
+       await eric.sendMessage(jid, { [type]: { url: pathFile }, caption, mimetype, fileName, ...options }, { quoted, ...options })
        return fs.promises.unlink(pathFile)
        }
 
@@ -497,7 +497,7 @@ setInterval(setBio, 60000);
      * @param {*} options 
      * @returns 
      */
-    gss.copyNForward = async (jid, message, forceForward = false, options = {}) => {
+    eric.copyNForward = async (jid, message, forceForward = false, options = {}) => {
         let vtype
 		if (options.readViewOnce) {
 			message.message = message.message && message.message.ephemeralMessage && message.message.ephemeralMessage.message ? message.message.ephemeralMessage.message : (message.message || undefined)
@@ -528,11 +528,11 @@ setInterval(setBio, 60000);
                 }
             } : {})
         } : {})
-        await gss.relayMessage(jid, waMessage.message, { messageId:  waMessage.key.id })
+        await eric.relayMessage(jid, waMessage.message, { messageId:  waMessage.key.id })
         return waMessage
     }
 
-    gss.cMod = (jid, copy, text = '', sender = gss.user.id, options = {}) => {
+    eric.cMod = (jid, copy, text = '', sender = eric.user.id, options = {}) => {
         //let copy = message.toJSON()
 		let mtype = Object.keys(copy.message)[0]
 		let isEphemeral = mtype === 'ephemeralMessage'
@@ -553,7 +553,7 @@ setInterval(setBio, 60000);
 		if (copy.key.remoteJid.includes('@s.whatsapp.net')) sender = sender || copy.key.remoteJid
 		else if (copy.key.remoteJid.includes('@broadcast')) sender = sender || copy.key.remoteJid
 		copy.key.remoteJid = jid
-		copy.key.fromMe = sender === gss.user.id
+		copy.key.fromMe = sender === eric.user.id
 
         return proto.WebMessageInfo.fromObject(copy)
     }
@@ -563,7 +563,7 @@ setInterval(setBio, 60000);
      * @param {*} path 
      * @returns 
      */
-    gss.getFile = async (PATH, save) => {
+    eric.getFile = async (PATH, save) => {
         let res
         let data = Buffer.isBuffer(PATH) ? PATH : /^data:.*?\/.*?;base64,/i.test(PATH) ? Buffer.from(PATH.split`,`[1], 'base64') : /^https?:\/\//.test(PATH) ? await (res = await getBuffer(PATH)) : fs.existsSync(PATH) ? (filename = PATH, fs.readFileSync(PATH)) : typeof PATH === 'string' ? PATH : Buffer.alloc(0)
         //if (!Buffer.isBuffer(data)) throw new TypeError('Result is not a buffer')
@@ -583,10 +583,10 @@ setInterval(setBio, 60000);
 
     }
 
-    return gss
+    return eric
 }
 
-startgss()
+starteric()
 
 
 let file = require.resolve(__filename)
