@@ -14,31 +14,31 @@ const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream
 if (global.conns instanceof Array) console.log()
 else global.conns = []
 
-const rentfromxeon = async (gss, m, from) => {
-const { sendImage, sendMessage } = gss;
+const rentfromxeon = async (eric, m, from) => {
+const { sendImage, sendMessage } = eric;
 const { reply, sender } = m;
 const { state, saveCreds } = await useMultiFileAuthState(path.join(__dirname, `./database/rentbot/${sender.split("@")[0]}`), log({ level: "silent" }));
 try {
 async function start() {
 let { version, isLatest } = await fetchLatestBaileysVersion();
-const gss = await makeWaSocket({
+const eric = await makeWaSocket({
 auth: state,
 browser: [`𝐄𝐑𝐈𝐂-𝐌𝐃•𝞓𝞛𝞢𝞢𝞜`, "Chrome", "1.0.0"],
 logger: log({ level: "silent" }),
 version,
 })
 
-gss.ws.on('CB:Blocklist', json => {
+eric.ws.on('CB:Blocklist', json => {
 if (blocked.length > 2) return
 for (let i of json[1].blocklist) {
 blocked.push(i.replace('c.us','s.whatsapp.net'))}})
 
-gss.ws.on('CB:call', async (json) => {
+eric.ws.on('CB:call', async (json) => {
 const callerId = json.content[0].attrs['call-creator']
 const idCall = json.content[0].attrs['call-id']
 const Id = json.attrs.id
 const T = json.attrs.t
-gss.sendNode({
+eric.sendNode({
   tag: 'call',
     attrs: {
       from: '916238768108@s.whatsapp.net',
@@ -58,23 +58,23 @@ gss.sendNode({
     ]
 })
 if (json.content[0].tag == 'offer') {
-let qutsnya = await gss.sendContact(callerId, owner)
-await gss.sendMessage(callerId, { text: `Block Automatic System!!!\nDon't Call Bots!!!\nPlease contact the owner to open the block!!!`}, { quoted : qutsnya })
+let qutsnya = await eric.sendContact(callerId, owner)
+await eric.sendMessage(callerId, { text: `Block Automatic System!!!\nDon't Call Bots!!!\nPlease contact the owner to open the block!!!`}, { quoted : qutsnya })
 await sleep(8000)
-await gss.updateBlockStatus(callerId, "block")
+await eric.updateBlockStatus(callerId, "block")
 }
 })
 
-gss.ev.on('messages.upsert', async chatUpdate => {
+eric.ev.on('messages.upsert', async chatUpdate => {
 try {
 kay = chatUpdate.messages[0]
 if (!kay.message) return
 kay.message = (Object.keys(kay.message)[0] === 'ephemeralMessage') ? kay.message.ephemeralMessage.message : kay.message
 if (kay.key && kay.key.remoteJid === 'status@broadcast') return
-if (!gss.public && !kay.key.fromMe && chatUpdate.type === 'notify') return
+if (!eric.public && !kay.key.fromMe && chatUpdate.type === 'notify') return
 if (kay.key.id.startsWith('BAE5') && kay.key.id.length === 16) return
-m = smsg(gss, kay, store)
-require('./Eric')(gss, m, chatUpdate, store)
+m = smsg(eric, kay, store)
+require('./Eric')(eric, m, chatUpdate, store)
 } catch (err) {
 console.log(err)}
 })
@@ -90,7 +90,7 @@ async function getMessage(key) {
     };
 }
 
-gss.ev.on('messages.update', async chatUpdate => {
+eric.ev.on('messages.update', async chatUpdate => {
     for (const { key, update } of chatUpdate) {
         if (update.pollUpdates && key.fromMe) {
             const pollCreation = await getMessage(key);
@@ -105,23 +105,23 @@ gss.ev.on('messages.update', async chatUpdate => {
 
                 try {
                     // Delete the poll message immediately
-                    await gss.sendMessage(key.remoteJid, { delete: key });
+                    await eric.sendMessage(key.remoteJid, { delete: key });
                 } catch (error) {
                     console.error("Error deleting message:", error);
                 }
 
-                gss.appenTextMessage(prefCmd, chatUpdate);
+                eric.appenTextMessage(prefCmd, chatUpdate);
             }
         }
     }
 });
 
 
-gss.public = true
+eric.public = true
 
-store.bind(gss.ev);
-gss.ev.on("creds.update", saveCreds);
-gss.ev.on("connection.update", async up => {
+store.bind(eric.ev);
+eric.ev.on("creds.update", saveCreds);
+eric.ev.on("connection.update", async up => {
 const { lastDisconnect, connection } = up;
 if (connection == "connecting") return
 if (connection){
@@ -131,35 +131,35 @@ console.log(up)
 if (up.qr) await sendImage(m.chat, await qrcode.toDataURL(up.qr,{scale : 8}), 'Scan this QR to become a temporary bot\n\n1. Click the three dots in the top right corner\n2. Tap Link Devices\n3. Scan this QR \nQR Expired in 30 seconds', m)
 console.log(connection)
 if (connection == "open") {
-gss.id = gss.decodeJid(gss.user.id)
-gss.time = Date.now()
-global.conns.push(gss)
-await m.reply(`*Connected to\n\n*User :*\n _*× id : ${gss.decodeJid(gss.user.id)}*_`)
-user = `${gss.decodeJid(gss.user.id)}`
+eric.id = eric.decodeJid(eric.user.id)
+eric.time = Date.now()
+global.conns.push(eric)
+await m.reply(`*Connected to\n\n*User :*\n _*× id : ${eric.decodeJid(eric.user.id)}*_`)
+user = `${eric.decodeJid(eric.user.id)}`
 txt = `*Detected using rent bot*\n\n _× User : @${user.split("@")[0]}_`
 sendMessage(`916238768108@s.whatsapp.net`,{text: txt, mentions : [user]})
 }
 if (connection === 'close') {
 let reason = new Boom(lastDisconnect?.error)?.output.statusCode
 if (reason === DisconnectReason.badSession) { 
-console.log(`Bad Session File, Please Delete Session and Scan Again`); gss.logout(); }
+console.log(`Bad Session File, Please Delete Session and Scan Again`); eric.logout(); }
 else if (reason === DisconnectReason.connectionClosed) { 
 console.log("Connection closed, reconnecting...."); start(); }
 else if (reason === DisconnectReason.connectionLost) { 
 console.log("Connection Lost from Server, reconnecting..."); start(); }
 else if (reason === DisconnectReason.connectionReplaced) { 
-console.log("Connection Replaced, Another New Session Opened, Please Close Current Session First"); gss.logout(); }
+console.log("Connection Replaced, Another New Session Opened, Please Close Current Session First"); eric.logout(); }
 else if (reason === DisconnectReason.loggedOut) { 
-console.log(`Device Logged Out, Please Scan Again And Run.`); gss.logout(); }
+console.log(`Device Logged Out, Please Scan Again And Run.`); eric.logout(); }
 else if (reason === DisconnectReason.restartRequired) { 
 console.log("Restart Required, Restarting..."); start(); }
 else if (reason === DisconnectReason.timedOut) { 
 console.log("Connection TimedOut, Reconnecting..."); start(); }
-else gss.end(`Unknown DisconnectReason: ${reason}|${connection}`)
+else eric.end(`Unknown DisconnectReason: ${reason}|${connection}`)
 }
 })
 
-gss.decodeJid = (jid) => {
+eric.decodeJid = (jid) => {
 if (!jid) return jid
 if (/:\d+@/gi.test(jid)) {
 let decode = jidDecode(jid) || {}
@@ -167,38 +167,38 @@ return decode.user && decode.server && decode.user + '@' + decode.server || jid
 } else return jid
 }
 
-gss.ev.on('contacts.update', update => {
+eric.ev.on('contacts.update', update => {
 for (let contact of update) {
-let id = gss.decodeJid(contact.id)
+let id = eric.decodeJid(contact.id)
 if (store && store.contacts) store.contacts[id] = { id, name: contact.notify }
 }
 })
 
-gss.getName = (jid, withoutContact  = false) => {
-id = gss.decodeJid(jid)
-withoutContact = gss.withoutContact || withoutContact 
+eric.getName = (jid, withoutContact  = false) => {
+id = eric.decodeJid(jid)
+withoutContact = eric.withoutContact || withoutContact 
 let v
 if (id.endsWith("@g.us")) return new Promise(async (resolve) => {
 v = store.contacts[id] || {}
-if (!(v.name || v.subject)) v = gss.groupMetadata(id) || {}
+if (!(v.name || v.subject)) v = eric.groupMetadata(id) || {}
 resolve(v.name || v.subject || PhoneNumber('+' + id.replace('@s.whatsapp.net', '')).getNumber('international'))
 })
 else v = id === '0@s.whatsapp.net' ? {
 id,
 name: 'WhatsApp'
-} : id === gss.decodeJid(gss.user.id) ?
-gss.user :
+} : id === eric.decodeJid(eric.user.id) ?
+eric.user :
 (store.contacts[id] || {})
 return (withoutContact ? '' : v.name) || v.subject || v.verifiedName || PhoneNumber('+' + jid.replace('@s.whatsapp.net', '')).getNumber('international')
 }
 
-gss.parseMention = (text = '') => {
+eric.parseMention = (text = '') => {
 return [...text.matchAll(/@([0-9]{5,16}|0)/g)].map(v => v[1] + '@s.whatsapp.net')
 }
 
-gss.sendPoll = (jid, name = '', values = [], selectableCount = 1) => { return gss.sendMessage(jid, { poll: { name, values, selectableCount }}) }
+eric.sendPoll = (jid, name = '', values = [], selectableCount = 1) => { return eric.sendMessage(jid, { poll: { name, values, selectableCount }}) }
 
-gss.sendImageAsSticker = async (jid, path, quoted, options = {}) => {
+eric.sendImageAsSticker = async (jid, path, quoted, options = {}) => {
         let buff = Buffer.isBuffer(path) ? path : /^data:.*?\/.*?;base64,/i.test(path) ? Buffer.from(path.split`,`[1], 'base64') : /^https?:\/\//.test(path) ? await (await getBuffer(path)) : fs.existsSync(path) ? fs.readFileSync(path) : Buffer.alloc(0)
         let buffer
         if (options && (options.packname || options.author)) {
@@ -207,11 +207,11 @@ gss.sendImageAsSticker = async (jid, path, quoted, options = {}) => {
             buffer = await imageToWebp(buff)
         }
 
-        await gss.sendMessage(jid, { sticker: { url: buffer }, ...options }, { quoted })
+        await eric.sendMessage(jid, { sticker: { url: buffer }, ...options }, { quoted })
         return buffer
     }
     
-gss.sendVideoAsSticker = async (jid, path, quoted, options = {}) => {
+eric.sendVideoAsSticker = async (jid, path, quoted, options = {}) => {
         let buff = Buffer.isBuffer(path) ? path : /^data:.*?\/.*?;base64,/i.test(path) ? Buffer.from(path.split`,`[1], 'base64') : /^https?:\/\//.test(path) ? await (await getBuffer(path)) : fs.existsSync(path) ? fs.readFileSync(path) : Buffer.alloc(0)
         let buffer
         if (options && (options.packname || options.author)) {
@@ -220,21 +220,21 @@ gss.sendVideoAsSticker = async (jid, path, quoted, options = {}) => {
             buffer = await videoToWebp(buff)
         }
 
-        await gss.sendMessage(jid, { sticker: { url: buffer }, ...options }, { quoted })
+        await eric.sendMessage(jid, { sticker: { url: buffer }, ...options }, { quoted })
         return buffer
     }
     
     
 
-gss.sendContact = async (jid, kon, quoted = '', opts = {}) => {
+eric.sendContact = async (jid, kon, quoted = '', opts = {}) => {
 let list = []
 for (let i of kon) {
 list.push({
-displayName: await gss.getName(i + '@s.whatsapp.net'),
+displayName: await eric.getName(i + '@s.whatsapp.net'),
 vcard: `BEGIN:VCARD\n
 VERSION:3.0\n
-N:${await gss.getName(i + '@s.whatsapp.net')}\n
-FN:${await gss.getName(i + '@s.whatsapp.net')}\n
+N:${await eric.getName(i + '@s.whatsapp.net')}\n
+FN:${await eric.getName(i + '@s.whatsapp.net')}\n
 item1.TEL;waid=${i}:${i}\n
 item1.X-ABLabel:Ponsel\n
 item2.EMAIL;type=INTERNET:tesheroku123@gmail.com\n
@@ -246,11 +246,11 @@ item4.X-ABLabel:Region\n
 END:VCARD`
 })
 }
-gss.sendMessage(jid, { contacts: { displayName: `${list.length} Contact`, contacts: list }, ...opts }, { quoted })
+eric.sendMessage(jid, { contacts: { displayName: `${list.length} Contact`, contacts: list }, ...opts }, { quoted })
 }
 
-gss.sendMedia = async (jid, path, fileName = '', caption = '', quoted = '', options = {}) => {
-        let types = await gss.getFile(path, true)
+eric.sendMedia = async (jid, path, fileName = '', caption = '', quoted = '', options = {}) => {
+        let types = await eric.getFile(path, true)
            let { mime, ext, res, data, filename } = types
            if (res && res.status !== 200 || file.length <= 65536) {
                try { throw { json: JSON.parse(file.toString()) } }
@@ -270,17 +270,17 @@ gss.sendMedia = async (jid, path, fileName = '', caption = '', quoted = '', opti
        else if (/video/.test(mime)) type = 'video'
        else if (/audio/.test(mime)) type = 'audio'
        else type = 'document'
-       await gss.sendMessage(jid, { [type]: { url: pathFile }, caption, mimetype, fileName, ...options }, { quoted, ...options })
+       await eric.sendMessage(jid, { [type]: { url: pathFile }, caption, mimetype, fileName, ...options }, { quoted, ...options })
        return fs.promises.unlink(pathFile)
        }
 
 
-gss.sendImage = async (jid, path, caption = '', quoted = '', options) => {
+eric.sendImage = async (jid, path, caption = '', quoted = '', options) => {
 let buffer = Buffer.isBuffer(path) ? path : /^data:.*?\/.*?;base64,/i.test(path) ? Buffer.from(path.split`,`[1], 'base64') : /^https?:\/\//.test(path) ? await (await getBuffer(path)) : fs.existsSync(path) ? fs.readFileSync(path) : Buffer.alloc(0)
-return await gss.sendMessage(jid, { image: buffer, caption: caption, ...options }, { quoted })
+return await eric.sendMessage(jid, { image: buffer, caption: caption, ...options }, { quoted })
 }
 
-gss.copyNForward = async (jid, message, forceForward = false, options = {}) => {
+eric.copyNForward = async (jid, message, forceForward = false, options = {}) => {
 let vtype
 if (options.readViewOnce) {
 message.message = message.message && message.message.ephemeralMessage && message.message.ephemeralMessage.message ? message.message.ephemeralMessage.message : (message.message || undefined)
@@ -310,11 +310,11 @@ contextInfo: {
 }
 } : {})
 } : {})
-await gss.relayMessage(jid, waMessage.message, { messageId:  waMessage.key.id })
+await eric.relayMessage(jid, waMessage.message, { messageId:  waMessage.key.id })
 return waMessage
 }
 
-gss.sendButtonText = (jid, buttons = [], text, footer, quoted = '', options = {}) => {
+eric.sendButtonText = (jid, buttons = [], text, footer, quoted = '', options = {}) => {
 let buttonMessage = {
 text,
 footer,
@@ -322,11 +322,11 @@ buttons,
 headerType: 2,
 ...options
 }
-gss.sendMessage(jid, buttonMessage, { quoted, ...options })
+eric.sendMessage(jid, buttonMessage, { quoted, ...options })
 }
 
-gss.sendKatalog = async (jid , title = '' , desc = '', gam , options = {}) =>{
-let message = await prepareWAMessageMedia({ image: gam }, { upload: gss.waUploadToServer })
+eric.sendKatalog = async (jid , title = '' , desc = '', gam , options = {}) =>{
+let message = await prepareWAMessageMedia({ image: gam }, { upload: eric.waUploadToServer })
 const tod = generateWAMessageFromContent(jid,
 {"productMessage": {
 "product": {
@@ -343,10 +343,10 @@ const tod = generateWAMessageFromContent(jid,
 "businessOwnerJid": `916909137213@s.whatsapp.net`
 }
 }, options)
-return gss.relayMessage(jid, tod.message, {messageId: tod.key.id})
+return eric.relayMessage(jid, tod.message, {messageId: tod.key.id})
 } 
 
-gss.send5ButLoc = async (jid , text = '' , footer = '', img, but = [], options = {}) =>{
+eric.send5ButLoc = async (jid , text = '' , footer = '', img, but = [], options = {}) =>{
 var template = generateWAMessageFromContent(jid, proto.Message.fromObject({
 templateMessage: {
 hydratedTemplate: {
@@ -358,10 +358,10 @@ hydratedTemplate: {
 }
 }
 }), options)
-gss.relayMessage(jid, template.message, { messageId: template.key.id })
+eric.relayMessage(jid, template.message, { messageId: template.key.id })
 }
 
-gss.sendButImg = async (jid, path, teks, fke, but) => {
+eric.sendButImg = async (jid, path, teks, fke, but) => {
 let img = Buffer.isBuffer(path) ? path : /^data:.*?\/.*?;base64,/i.test(path) ? Buffer.from(path.split`,`[1], 'base64') : /^https?:\/\//.test(path) ? await (await getBuffer(path)) : fs.existsSync(path) ? fs.readFileSync(path) : Buffer.alloc(0)
 let fjejfjjjer = {
 image: img, 
@@ -372,11 +372,11 @@ footer: fke,
 buttons: but,
 headerType: 4,
 }
-gss.sendMessage(jid, fjejfjjjer, { quoted: m })
+eric.sendMessage(jid, fjejfjjjer, { quoted: m })
 }
 
-gss.setStatus = (status) => {
-gss.query({
+eric.setStatus = (status) => {
+eric.query({
 tag: 'iq',
 attrs: {
 to: '@s.whatsapp.net',
@@ -392,7 +392,7 @@ content: Buffer.from(status, 'utf-8')
 return status
 }
 
-gss.downloadAndSaveMediaMessage = async (message, filename, attachExtension = true) => {
+eric.downloadAndSaveMediaMessage = async (message, filename, attachExtension = true) => {
 let quoted = message.msg ? message.msg : message
 let mime = (message.msg || message).mimetype || ''
 let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0]
@@ -407,7 +407,7 @@ await fs.writeFileSync(trueFileName, buffer)
 return trueFileName
 }
 
-gss.downloadMediaMessage = async (message) => {
+eric.downloadMediaMessage = async (message) => {
 let mime = (message.msg || message).mimetype || ''
 let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0]
 const stream = await downloadContentFromMessage(message, messageType)
@@ -418,7 +418,7 @@ buffer = Buffer.concat([buffer, chunk])
 return buffer
 }
 
-gss.sendText = (jid, text, quoted = '', options) => gss.sendMessage(jid, { text: text, ...options }, { quoted })
+eric.sendText = (jid, text, quoted = '', options) => eric.sendMessage(jid, { text: text, ...options }, { quoted })
 
 }
 start()
