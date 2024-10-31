@@ -67,17 +67,27 @@ if (global.db) setInterval(async () => {
   }, 30 * 1000)
 
 async function starteric() {
-	/*const {data} = await axios(`https://pastebin.com/raw/${sid}`);
-        await fs.writeFileSync(`./${sessionName}/creds.json`, JSON.stringify(data));
-	*/
-	  const filer = File.fromURL(`https://mega.nz/file/${sid}`);
-    filer.download((err, data) => {
-      if (err) throw err;
-      fs.writeFile(__dirname + '/${sessionName}/creds.json', data, () => {
-        console.log('*sᴇssɪᴏɴ ᴅᴏᴡɴʟᴏᴀᴅᴇᴅ [🌟]*');
-      });
-    });
-    const { state, saveCreds } = await useMultiFileAuthState(`./${sessionName}/creds.json`)
+    const filer = File.fromURL(`https://mega.nz/file/${sid}`);
+    
+    try {
+        // Download the session file from MEGA and save it locally
+        const data = await new Promise((resolve, reject) => {
+            filer.download((err, data) => {
+                if (err) return reject(err);
+                resolve(data);
+            });
+        });
+
+        // Write the downloaded data to creds.json
+        await fs.promises.writeFile(`./${sessionName}/creds.json`, data);
+        console.log('*Session downloaded successfully [🌟]*');
+    } catch (error) {
+        console.error("Error downloading session file:", error);
+        return; // Stop if there's an error in downloading/writing creds
+    }
+
+    // Load the session data after ensuring creds.json is fully written
+    const { state, saveCreds } = await useMultiFileAuthState(`./${sessionName}/creds.json`);
 
     const eric = ericConnect({
         logger: pino({ level: 'silent' }),
@@ -86,35 +96,33 @@ async function starteric() {
         auth: state,
         getMessage: async (key) => {
             if (store) {
-                const msg = await store.loadMessage(key.remoteJid, key.id)
-                return msg.message || undefined
+                const msg = await store.loadMessage(key.remoteJid, key.id);
+                return msg.message || undefined;
             }
             return {
                 conversation: "*Hey 👋🏻*,/n_I Am Ameen-Ser_/n_The Developer Of The Bot Eric-MD_/n*Thanks For Choosing Eric-Md*"
-            }
+            };
         }
-    })
+    });
 
-    store.bind(eric.ev)
-    
-
+    store.bind(eric.ev);
 
     eric.ev.on('messages.upsert', async chatUpdate => {
-        //console.log(JSON.stringify(chatUpdate, undefined, 2))
         try {
-        mek = chatUpdate.messages[0]
-        if (!mek.message) return
-        mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message
-        if (mek.key && mek.key.remoteJid === 'status@broadcast') return
-        if (!eric.public && !mek.key.fromMe && chatUpdate.type === 'notify') return
-        if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return
-        if (mek.key.id.startsWith('FatihArridho_')) return
-        m = smsg(eric, mek, store)
-        require("./eric")(eric, m, chatUpdate, store)
+            const mek = chatUpdate.messages[0];
+            if (!mek.message) return;
+            mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message;
+            if (mek.key && mek.key.remoteJid === 'status@broadcast') return;
+            if (!eric.public && !mek.key.fromMe && chatUpdate.type === 'notify') return;
+            if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16) return;
+            if (mek.key.id.startsWith('FatihArridho_')) return;
+            const m = smsg(eric, mek, store);
+            require("./eric")(eric, m, chatUpdate, store);
         } catch (err) {
-            console.log(err)
+            console.log(err);
         }
-    })
+    });
+								 }
     
 
 
