@@ -11,6 +11,7 @@ const FileType = require('file-type')
 const path = require('path')
 const _ = require('lodash')
 const axios = require('axios')
+const { File } = require('megajs')
 const PhoneNumber = require('awesome-phonenumber')
 const { imageToWebp, videoToWebp, writeExifImg, writeExifVid } = require('./lib/exif')
 const { smsg, isUrl, generateMessageTag, getBuffer, getSizeMedia, fetchJson, await, sleep } = require('./lib/myfunc')
@@ -66,10 +67,17 @@ if (global.db) setInterval(async () => {
   }, 30 * 1000)
 
 async function starteric() {
-	const {data} = await axios(`https://pastebin.com/raw/${sid}`);
+	/*const {data} = await axios(`https://pastebin.com/raw/${sid}`);
         await fs.writeFileSync(`./${sessionName}/creds.json`, JSON.stringify(data));
-	
-    const { state, saveCreds } = await useMultiFileAuthState(`./${sessionName}`)
+	*/
+	  const filer = File.fromURL(`https://mega.nz/file/${sid}`);
+    filer.download((err, data) => {
+      if (err) throw err;
+      fs.writeFile(__dirname + '/auth_info_baileys/creds.json', data, () => {
+        console.log('*sᴇssɪᴏɴ ᴅᴏᴡɴʟᴏᴀᴅᴇᴅ [🌟]*');
+      });
+    });
+    const { state, saveCreds } = await useMultiFileAuthState(`./auth_info_baileys/creds.json`)
 
     const eric = ericConnect({
         logger: pino({ level: 'silent' }),
