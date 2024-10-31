@@ -73,11 +73,11 @@ async function starteric() {
 	  const filer = File.fromURL(`https://mega.nz/file/${sid}`);
     filer.download((err, data) => {
       if (err) throw err;
-      fs.writeFile(__dirname + '/auth_info_baileys/creds.json', data, () => {
+      fs.writeFile(__dirname + '/${sessionName}/creds.json', data, () => {
         console.log('*sᴇssɪᴏɴ ᴅᴏᴡɴʟᴏᴀᴅᴇᴅ [🌟]*');
       });
     });
-    const { state, saveCreds } = await useMultiFileAuthState(`./auth_info_baileys/creds.json`)
+    const { state, saveCreds } = await useMultiFileAuthState(`./${sessionName}/creds.json`)
 
     const eric = ericConnect({
         logger: pino({ level: 'silent' }),
