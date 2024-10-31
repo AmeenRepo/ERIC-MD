@@ -15,7 +15,7 @@ const { File } = require('megajs')
 const PhoneNumber = require('awesome-phonenumber')
 const { imageToWebp, videoToWebp, writeExifImg, writeExifVid } = require('./lib/exif')
 const { smsg, isUrl, generateMessageTag, getBuffer, getSizeMedia, fetchJson, await, sleep } = require('./lib/myfunc')
-const sid = "c3iPJwy6" // neeta id eveda barum
+const sid = "pVRWTTTK#UWxUywcH-ZImXx9N2YA_8r_lsx6QxmKjm6t1pfsa8No" // neeta id eveda barum
 
 
 var low
